@@ -1,0 +1,551 @@
+<!DOCTYPE html><html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>امین اورعی | استریمر آپارات</title>
+    
+    <!-- فونت وزیر متن -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
+    <!-- آیکون‌ها -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Toastify for alerts -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            purple: '#8b5cf6',
+                            cyan: '#06b6d4',
+                            dark: '#0f172a',
+                            pink: '#ec4899'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .neon-text {
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .input-style {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: white;
+            transition: all 0.3s;
+        }
+        .input-style:focus {
+            border-color: #06b6d4;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+            outline: none;
+        }
+        
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid #06b6d4;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-brand-dark text-white font-sans overflow-x-hidden selection:bg-brand-purple selection:text-white">
+
+    <!-- Auth Modal (Hidden by default) -->
+    <div id="authModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300">
+        <div class="glass-card w-full max-w-md p-8 rounded-3xl relative transform scale-95 transition-transform duration-300" id="authModalContent">
+            <!-- Close Button -->
+            <button onclick="toggleAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="block">
+                <h2 class="text-3xl font-bold text-center mb-2">ورود به اکانت 🎮</h2>
+                <p class="text-gray-400 text-center mb-8 text-sm">برای دسترسی به بخش‌های ویژه وارد شو</p>
+                
+                <form id="frmLogin" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">ایمیل</label>
+                        <div class="relative">
+                            <i data-lucide="mail" class="absolute right-3 top-3 w-5 h-5 text-gray-500"></i>
+                            <input type="email" id="loginEmail" required class="input-style w-full p-3 pr-10 rounded-xl" placeholder="example@email.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">رمز عبور</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute right-3 top-3 w-5 h-5 text-gray-500"></i>
+                            <input type="password" id="loginPass" required class="input-style w-full p-3 pr-10 rounded-xl" placeholder="••••••••">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-brand-cyan to-brand-purple hover:from-brand-purple hover:to-brand-cyan text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-brand-purple/25 flex justify-center items-center gap-2">
+                        <span>ورود</span>
+                        <div class="loader" id="loginLoader"></div>
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center text-sm text-gray-400">
+                    حساب نداری؟ 
+                    <button onclick="switchAuthMode('signup')" class="text-brand-cyan hover:underline font-bold">ثبت نام کن</button>
+                </div>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="hidden">
+                <h2 class="text-3xl font-bold text-center mb-2">عضویت در اسکواد 🚀</h2>
+                <p class="text-gray-400 text-center mb-8 text-sm">یه اکانت بساز و به جمع ما بپیوند</p>
+                
+                <form id="frmSignup" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">نام نمایشی (نیک‌نیم)</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute right-3 top-3 w-5 h-5 text-gray-500"></i>
+                            <input type="text" id="signupName" required class="input-style w-full p-3 pr-10 rounded-xl" placeholder="مثلا: ToxicGamer">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">ایمیل</label>
+                        <div class="relative">
+                            <i data-lucide="mail" class="absolute right-3 top-3 w-5 h-5 text-gray-500"></i>
+                            <input type="email" id="signupEmail" required class="input-style w-full p-3 pr-10 rounded-xl" placeholder="example@email.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">رمز عبور</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute right-3 top-3 w-5 h-5 text-gray-500"></i>
+                            <input type="password" id="signupPass" required class="input-style w-full p-3 pr-10 rounded-xl" placeholder="حداقل ۶ کاراکتر">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-brand-pink to-brand-purple hover:from-brand-purple hover:to-brand-pink text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-brand-purple/25 flex justify-center items-center gap-2">
+                        <span>ثبت نام</span>
+                        <div class="loader" id="signupLoader"></div>
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center text-sm text-gray-400">
+                    قبلا اکانت ساختی؟ 
+                    <button onclick="switchAuthMode('login')" class="text-brand-cyan hover:underline font-bold">وارد شو</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Animation -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-purple rounded-full blur-[128px] opacity-20 animate-pulse-slow"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-brand-cyan rounded-full blur-[128px] opacity-20 animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed w-full top-0 z-50 glass-card border-b border-white/5">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold flex items-center gap-2">
+                <i data-lucide="gamepad-2" class="text-brand-cyan w-8 h-8"></i>
+                <span class="bg-clip-text text-transparent bg-gradient-to-l from-brand-cyan to-brand-purple hidden md:inline">
+                    AMIN OREI
+                </span>
+            </div>
+            
+            <nav class="hidden md:flex gap-8 text-gray-300 text-sm font-medium">
+                <a href="#home" class="hover:text-brand-cyan transition-colors">خانه</a>
+                <a href="#about" class="hover:text-brand-purple transition-colors">درباره من</a>
+                <a href="#stats" class="hover:text-brand-pink transition-colors">آمار</a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <!-- User Auth Section -->
+                <div id="userSection" class="hidden items-center gap-3">
+                    <span id="userNameDisplay" class="text-brand-cyan font-bold text-sm"></span>
+                    <button id="btnLogout" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded-lg transition-colors">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Login Button (Visible when logged out) -->
+                <button id="btnLoginBtn" onclick="toggleAuthModal()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                    ورود / ثبت‌نام
+                </button>
+
+                <a href="https://www.aparat.com/" target="_blank" class="bg-brand-purple hover:bg-brand-pink text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-brand-purple/25 flex items-center gap-2">
+                    <i data-lucide="tv" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">آپارات</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hero -->
+    <section id="home" class="min-h-screen flex items-center pt-20 relative">
+        <div class="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+            <div class="order-2 md:order-1 space-y-6">
+                <div class="inline-block px-4 py-1 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple text-sm font-bold mb-2">
+                    👋 سلام رفقا!
+                </div>
+                <h1 class="text-5xl md:text-7xl font-bold leading-tight">
+                    من <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand-cyan to-brand-purple neon-text">امین اورعی</span> هستم
+                </h1>
+                <h2 class="text-2xl md:text-3xl text-gray-300 font-light">
+                    خفن‌ترین استریمر <span class="text-brand-pink font-bold">آپارات</span> 🚀
+                </h2>
+                <p class="text-gray-400 text-lg leading-relaxed max-w-lg">
+                    به دنیای گیمینگ من خوش اومدید! اینجا جاییه که حرفه‌ای‌ترین گیم‌پلی‌ها، خنده‌دارترین لحظات و باحال‌ترین کامیونیتی گیمرهای ایرانی دور هم جمع میشن.
+                </p>
+                <div class="flex gap-4 pt-4">
+                    <a href="https://www.aparat.com/" class="group relative px-8 py-4 bg-brand-cyan text-brand-dark font-black rounded-xl overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all">
+                        <span class="relative z-10 flex items-center gap-2">
+                            مشاهده کانال
+                            <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+                        </span>
+                        <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                    </a>
+                </div>
+            </div>
+            <div class="order-1 md:order-2 flex justify-center relative">
+                <div class="absolute inset-0 bg-gradient-to-tr from-brand-cyan to-brand-purple rounded-full blur-[100px] opacity-30 animate-pulse"></div>
+                <div class="relative w-80 h-80 md:w-[500px] md:h-[500px] animate-float">
+                    <div class="w-full h-full rounded-3xl overflow-hidden border-2 border-brand-purple/50 shadow-[0_0_50px_rgba(139,92,246,0.3)] relative group">
+                        <img src="image.png" 
+                             onerror="this.src='https://placehold.co/600x600/1e1e2e/8b5cf6?text=Image+Not+Found'" 
+                             alt="Amin Orei" 
+                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent opacity-60"></div>
+                        <div class="absolute bottom-6 right-6 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 animate-pulse">
+                            <span class="w-2 h-2 bg-white rounded-full"></span>
+                            LIVE
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section id="stats" class="py-20 bg-black/20">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="glass-card p-6 rounded-2xl text-center transform hover:-translate-y-2 transition-transform">
+                    <i data-lucide="users" class="w-10 h-10 text-brand-cyan mx-auto mb-4"></i>
+                    <h3 class="text-3xl font-bold text-white mb-1">+50K</h3>
+                    <p class="text-gray-400 text-sm">دنبال‌کننده</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl text-center transform hover:-translate-y-2 transition-transform delay-100">
+                    <i data-lucide="eye" class="w-10 h-10 text-brand-purple mx-auto mb-4"></i>
+                    <h3 class="text-3xl font-bold text-white mb-1">+1M</h3>
+                    <p class="text-gray-400 text-sm">بازدید کل</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl text-center transform hover:-translate-y-2 transition-transform delay-200">
+                    <i data-lucide="clock" class="w-10 h-10 text-brand-pink mx-auto mb-4"></i>
+                    <h3 class="text-3xl font-bold text-white mb-1">+2000</h3>
+                    <p class="text-gray-400 text-sm">ساعت استریم</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl text-center transform hover:-translate-y-2 transition-transform delay-300">
+                    <i data-lucide="trophy" class="w-10 h-10 text-yellow-500 mx-auto mb-4"></i>
+                    <h3 class="text-3xl font-bold text-white mb-1">PRO</h3>
+                    <p class="text-gray-400 text-sm">لول گیمینگ</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="glass-card rounded-3xl p-8 md:p-12 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-brand-purple/20 rounded-full blur-[80px]"></div>
+                <div class="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-bold mb-6 border-r-4 border-brand-cyan pr-4">چرا کانال من؟</h2>
+                        <div class="space-y-6 text-gray-300">
+                            <p>سلام رفقا! امین هستم. توی کانال آپارات من، فقط بازی نمی‌کنیم؛ زندگی می‌کنیم!</p>
+                            <ul class="space-y-4">
+                                <li class="flex items-center gap-3">
+                                    <div class="bg-brand-purple/20 p-2 rounded-lg"><i data-lucide="joystick" class="text-brand-purple w-5 h-5"></i></div>
+                                    <span>استریم بازی‌های روز دنیا با بالاترین کیفیت</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <div class="bg-brand-cyan/20 p-2 rounded-lg"><i data-lucide="zap" class="text-brand-cyan w-5 h-5"></i></div>
+                                    <span>ری‌اکت‌های خفن و لحظات فان</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-800 rounded-xl p-4 transform translate-y-8">
+                            <div class="h-32 bg-gradient-to-br from-blue-600 to-blue-900 rounded-lg mb-3 flex items-center justify-center"><span class="font-bold text-xl">Warzone</span></div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4">
+                            <div class="h-32 bg-gradient-to-br from-green-600 to-green-900 rounded-lg mb-3 flex items-center justify-center"><span class="font-bold text-xl">FIFA</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-black py-12 border-t border-white/10 mt-10 text-center text-gray-500">
+        <p>© 2024 طراحی شده برای امین اورعی</p>
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, signInWithCustomToken, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, collection } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        let firebaseConfig;
+
+        // 🟡 بررسی: آیا در محیط پیش‌نمایش هستیم یا فایل دانلود شده؟
+        if (typeof __firebase_config !== 'undefined') {
+            // محیط پیش‌نمایش (تست خودکار)
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+            // ⚠️ اگر فایل را دانلود کردید، کد فایربیس خود را در بخش زیر جایگزین کنید:
+            // ⚠️ تنظیمات فایربیس خود را اینجا وارد کنید
+            firebaseConfig = {
+                apiKey: "API_KEY_KHOD_RA_INJA_BEZARID",
+                authDomain: "PROJECT_ID.firebaseapp.com",
+                projectId: "PROJECT_ID",
+                storageBucket: "PROJECT_ID.appspot.com",
+                messagingSenderId: "SENDER_ID",
+                appId: "APP_ID"
+            };
+        }
+
+        let app;
+        try {
+            app = initializeApp(firebaseConfig);
+        } catch (e) {
+            console.error("Firebase Init Error: Check your config!", e);
+        }
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'amin-orei-site';
+
+        // --- Logic: Authentication ---
+
+        // 1. Initial Setup Check (Important for Environment)
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } 
+            } catch (error) {
+                console.error("Auth Init Error:", error);
+            }
+        }
+        initAuth();
+
+        // 2. Monitor Auth State
+        onAuthStateChanged(auth, async (user) => {
+            const userSection = document.getElementById('userSection');
+            const loginBtn = document.getElementById('btnLoginBtn');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+
+            if (user && !user.isAnonymous) {
+                // User is logged in
+                loginBtn.classList.add('hidden');
+                userSection.classList.remove('hidden');
+                userSection.classList.add('flex');
+                
+                // Try to get name from Auth profile, if not, fetch from Firestore
+                let displayName = user.displayName;
+                if (!displayName) {
+                    try {
+                        const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info'));
+                        if (userDoc.exists()) {
+                            displayName = userDoc.data().name;
+                        }
+                    } catch (e) {
+                        console.log("Error fetching profile:", e);
+                    }
+                }
+                userNameDisplay.textContent = `خوش اومدی، ${displayName || 'گیمر'}`;
+                
+                // Hide modal if open
+                const modal = document.getElementById('authModal');
+                if(!modal.classList.contains('hidden')) toggleAuthModal();
+
+            } else {
+                // User is logged out
+                loginBtn.classList.remove('hidden');
+                userSection.classList.add('hidden');
+                userSection.classList.remove('flex');
+                userNameDisplay.textContent = '';
+            }
+        });
+
+        // 3. Helper: Toast Notification
+        window.showToast = (msg, type = 'success') => {
+            Toastify({
+                text: msg,
+                duration: 3000,
+                gravity: "top", 
+                position: "center", 
+                style: {
+                    background: type === 'success' ? "linear-gradient(to right, #00b09b, #96c93d)" : "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    borderRadius: "10px",
+                    fontFamily: "Vazirmatn"
+                }
+            }).showToast();
+        };
+
+        // 4. Handle Signup
+        const signupForm = document.getElementById('frmSignup');
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const pass = document.getElementById('signupPass').value;
+            const loader = document.getElementById('signupLoader');
+
+            loader.style.display = 'block';
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // Update Auth Profile
+                await updateProfile(user, { displayName: name });
+
+                // Save to Firestore (Rule 1 Compliant)
+                // Path: /artifacts/{appId}/users/{userId}/profile/info
+                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info'), {
+                    name: name,
+                    email: email,
+                    role: 'member',
+                    joinDate: new Date().toISOString()
+                });
+
+                showToast(`خوش اومدی ${name}! ثبت نام موفق بود.`);
+                
+            } catch (error) {
+                console.error(error);
+                let msg = "خطا در ثبت نام.";
+                if (error.code === 'auth/email-already-in-use') msg = "این ایمیل قبلا ثبت شده!";
+                if (error.code === 'auth/weak-password') msg = "رمز عبور باید قوی‌تر باشد.";
+                showToast(msg, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        // 5. Handle Login
+        const loginForm = document.getElementById('frmLogin');
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const loader = document.getElementById('loginLoader');
+
+            loader.style.display = 'block';
+
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                showToast("ورود موفقیت آمیز بود!");
+            } catch (error) {
+                console.error(error);
+                let msg = "ایمیل یا رمز عبور اشتباه است.";
+                showToast(msg, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        // 6. Handle Logout
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showToast("با موفقیت خارج شدید.", 'success');
+            } catch (error) {
+                showToast("خطا در خروج.", 'error');
+            }
+        });
+
+    </script>
+
+    <!-- UI Scripts (Toggle Modal, Icons) -->
+    <script>
+        lucide.createIcons();
+
+        function toggleAuthModal() {
+            const modal = document.getElementById('authModal');
+            const content = document.getElementById('authModalContent');
+            
+            if (modal.classList.contains('hidden')) {
+                // Open
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+            } else {
+                // Close
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function switchAuthMode(mode) {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            if (mode === 'signup') {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+            } else {
+                signupForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('authModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('authModal')) {
+                toggleAuthModal();
+            }
+        });
+    </script>
+</body>
+</html>
+
